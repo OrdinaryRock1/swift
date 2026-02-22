@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AETHERIA | The Art of Silence</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'ivory': '#F2F0E9',
+                        'charcoal': '#1A1A1A',
+                        'graphite': '#2C2C2C',
+                        'bronze': '#8C7B6C',
+                        // Admin Specific Colors
+                        'surface': '#FFFFFF', 
+                        'success': '#3D5B48',
+                        'pending': '#9A7B4F',
+                    },
+                    fontFamily: {
+                        serif: ['"Cormorant Garamond"', 'serif'],
+                        sans: ['"Manrope"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- Base Aesthetics --- */
+        body {
+            background-color: #1A1A1A;
+            color: #F2F0E9;
+            overflow-x: hidden;
+            cursor: none; /* Custom cursor implementation */
+        }
+
+        /* Noise Overlay */
+        .noise-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 900; opacity: 0.05;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* --- Custom Cursor --- */
+        .cursor-dot, .cursor-outline {
+            position: fixed; top: 0; left: 0; transform: translate(-50%, -50%); border-radius: 50%; z-index: 9999; pointer-events: none;
+        }
+        .cursor-dot { width: 8px; height: 8px; background-color: white; }
+        .cursor-outline { width: 40px; height: 40px; border: 1px solid rgba(255, 255, 255, 0.5); transition: width 0.2s, height 0.2s, background-color 0.2s; }
+        
+        /* --- Admin Styles --- */
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+        .status-badge { padding: 4px 12px; border-radius: 99px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        .status-confirmed { background: #E6F0EA; color: #3D5B48; }
+        .status-pending { background: #FAF5E8; color: #9A7B4F; }
+        .status-checked-in { background: #E8F0FA; color: #4A6FA5; }
+        
+        /* Utilities for View Switching */
+        .hidden-app { display: none !important; }
+        .sidebar-link.active { border-right: 3px solid #8C7B6C; background: rgba(255,255,255,0.05); color: white; }
+    </style>
+</head>
+<body class="antialiased selection:bg-bronze selection:text-white">
+
+    <div class="noise-overlay"></div>
+    <div id="custom-cursor">
+        <div class="cursor-dot"></div>
+        <div class="cursor-outline"></div>
+    </div>
+
+    <div id="preloader" class="fixed inset-0 z-[1000] bg-charcoal flex items-center justify-center">
+        <div class="text-center">
+            <h1 class="font-serif text-3xl md:text-5xl italic text-bronze overflow-hidden">
+                <span class="block translate-y-full" id="loader-text">Aetheria</span>
+            </h1>
+            <div class="mt-4 h-[1px] w-0 bg-white/20 mx-auto" id="loader-line"></div>
+        </div>
+    </div>
+
+    <div id="app-public">
+        
+        <nav class="fixed top-0 w-full z-50 px-8 py-8 md:px-12 flex justify-between items-center mix-blend-difference text-white opacity-0" id="nav-bar">
+            <a href="#" class="font-serif text-2xl tracking-widest uppercase hover-trigger">Aetheria</a>
+            
+            <div class="hidden md:flex gap-12 font-sans text-xs tracking-[0.2em] uppercase">
+                <a href="#suites" class="hover-trigger hover:text-white/70 transition-colors">Suites</a>
+                <a href="#" class="hover-trigger hover:text-white/70 transition-colors">Wellness</a>
+                <a href="#" class="hover-trigger hover:text-white/70 transition-colors">Dining</a>
+            </div>
+
+            <div class="flex gap-8 items-center font-sans text-xs tracking-[0.2em] uppercase">
+                <button onclick="switchToAdmin()" class="hover-trigger hover:text-bronze transition-colors opacity-60 hover:opacity-100">Admin</button>
+                <a href="#" class="border-b border-white/40 pb-1 hover-trigger hover:border-white transition-colors">Reserve</a>
+            </div>
+        </nav>
+
+        <main>
+            <section class="relative h-screen w-full flex items-center justify-center overflow-hidden">
+                <div class="absolute inset-0 z-0 bg-charcoal">
+                    <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1618245318763-a15156d6b23c?q=80&w=2940&auto=format&fit=crop')] bg-cover bg-center opacity-60 scale-110" id="hero-bg"></div>
+                    <div class="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-charcoal"></div>
+                </div>
+
+                <div class="relative z-10 text-center flex flex-col items-center">
+                    <p class="font-sans text-xs tracking-[0.4em] uppercase text-white/60 mb-6 reveal-opacity opacity-0">The Amalfi Coast</p>
+                    <h1 class="font-serif text-6xl md:text-8xl lg:text-[9rem] leading-[0.85] tracking-tighter text-ivory">
+                        <div class="overflow-hidden"><span class="block translate-y-full hero-title-line">Wait for</span></div>
+                        <div class="overflow-hidden"><span class="block translate-y-full hero-title-line italic text-white/90 font-light">the Silence</span></div>
+                    </h1>
+                </div>
+
+                <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 reveal-opacity opacity-0">
+                    <div class="w-[1px] h-16 bg-gradient-to-b from-transparent via-white/50 to-transparent"></div>
+                    <span class="font-sans text-[10px] tracking-[0.3em] uppercase text-white/50">Explore</span>
+                </div>
+            </section>
+
+            <section class="relative bg-ivory text-graphite py-32 md:py-48 px-6 md:px-24">
+                <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-16 md:gap-32">
+                    <div class="md:w-1/4 pt-4">
+                        <span class="block w-12 h-[1px] bg-bronze mb-6"></span>
+                        <h3 class="font-sans text-xs tracking-[0.2em] uppercase text-bronze">Philosophy</h3>
+                    </div>
+                    <div class="md:w-3/4">
+                        <p class="font-serif text-3xl md:text-5xl leading-[1.2] font-light reveal-text-scroll">
+                            Luxury is the absence of noise. <br>
+                            At Aetheria, time moves at the speed of the tides. We offer a collection of moments, not amenities—curated for those who understand that true wealth is privacy.
+                        </p>
+                        <div class="mt-16 grid grid-cols-1 md:grid-cols-2 gap-12">
+                            <div class="overflow-hidden h-[400px]">
+                                <img src="https://images.unsplash.com/photo-1598928506311-c55ded91a20c?q=80&w=2070&auto=format&fit=crop" alt="Minimal Interior" class="w-full h-full object-cover grayscale-[20%] hover:scale-105 transition-transform duration-[1.5s] ease-out hover-trigger">
+                            </div>
+                            <div class="flex flex-col justify-end">
+                                <p class="font-sans text-sm leading-loose text-gray-600">
+                                    Built from local limestone and seamless glass, our architecture disappears into the landscape. No boundaries between you and the horizon.
+                                </p>
+                                <a href="#" class="mt-8 font-sans text-xs tracking-[0.2em] uppercase border-b border-graphite/20 w-max pb-1 hover:border-bronze hover:text-bronze transition-colors hover-trigger">Read Our Story</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="suites" class="bg-charcoal text-ivory overflow-hidden">
+                <div class="h-screen sticky top-0 flex items-center overflow-hidden" id="suite-container">
+                    <div class="min-w-[40vw] pl-12 md:pl-24 pr-12">
+                        <h2 class="font-serif text-5xl md:text-7xl mb-6">The <br><span class="italic text-bronze">Sanctuaries</span></h2>
+                        <p class="font-sans text-xs tracking-[0.2em] uppercase text-white/40 max-w-xs leading-relaxed">
+                            Swipe to discover our signature suites.
+                        </p>
+                    </div>
+
+                    <div class="flex gap-12 md:gap-24 pr-24" id="suite-wrapper">
+                        <div class="relative w-[85vw] md:w-[35vw] aspect-[4/5] group hover-trigger">
+                            <div class="absolute inset-0 bg-gray-800 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1615874959474-d609969a20ed?q=80&w=1780&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110 opacity-80" alt="Suite 1">
+                            </div>
+                            <div class="absolute bottom-8 left-8 z-10">
+                                <h3 class="font-serif text-3xl italic">The Obsidian</h3>
+                                <p class="font-sans text-[10px] tracking-[0.2em] mt-2 uppercase text-white/70">120 SQM / Sea View</p>
+                            </div>
+                        </div>
+                        <div class="relative w-[85vw] md:w-[35vw] aspect-[4/5] group hover-trigger">
+                            <div class="absolute inset-0 bg-gray-800 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1590490360182-f33fb0d41388?q=80&w=1780&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110 opacity-80" alt="Suite 2">
+                            </div>
+                            <div class="absolute bottom-8 left-8 z-10">
+                                <h3 class="font-serif text-3xl italic">The Driftwood</h3>
+                                <p class="font-sans text-[10px] tracking-[0.2em] mt-2 uppercase text-white/70">180 SQM / Private Pool</p>
+                            </div>
+                        </div>
+                        <div class="relative w-[85vw] md:w-[35vw] aspect-[4/5] group hover-trigger">
+                            <div class="absolute inset-0 bg-gray-800 overflow-hidden">
+                                <img src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110 opacity-80" alt="Suite 3">
+                            </div>
+                            <div class="absolute bottom-8 left-8 z-10">
+                                <h3 class="font-serif text-3xl italic">The Azure</h3>
+                                <p class="font-sans text-[10px] tracking-[0.2em] mt-2 uppercase text-white/70">220 SQM / Cliffside</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="bg-charcoal text-white/40 py-24 px-12 border-t border-white/5">
+                <div class="flex flex-col md:flex-row justify-between items-end">
+                    <div>
+                        <h2 class="font-serif text-2xl text-white mb-6">AETHERIA</h2>
+                        <p class="font-sans text-xs tracking-[0.1em]">Via del Paradiso, 4<br>84011 Amalfi SA, Italy</p>
+                    </div>
+                    <div class="flex gap-8 font-sans text-xs tracking-[0.2em] uppercase mt-12 md:mt-0">
+                        <a href="#" class="hover:text-white transition-colors">Instagram</a>
+                        <a href="#" class="hover:text-white transition-colors">Email</a>
+                        <a href="#" class="hover:text-white transition-colors">Legal</a>
+                    </div>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <div id="app-admin" class="hidden-app fixed inset-0 z-[100] w-full h-full bg-ivory text-charcoal flex overflow-hidden">
+        
+        <div id="admin-login-screen" class="absolute inset-0 z-[110] bg-charcoal flex items-center justify-center">
+            <div class="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1618245318763-a15156d6b23c?q=80&w=2940')] bg-cover bg-center"></div>
+            
+            <div class="glass-panel relative w-full max-w-sm p-12 text-center shadow-2xl">
+                <h1 class="font-serif text-3xl mb-2 text-charcoal">AETHERIA</h1>
+                <p class="text-[10px] uppercase tracking-[0.2em] text-gray-500 mb-8">Staff Portal</p>
+                
+                <div class="space-y-4">
+                    <input type="password" id="admin-pass" value="demo" class="w-full bg-transparent border-b border-gray-400 py-2 text-center focus:outline-none focus:border-bronze transition-colors text-charcoal" placeholder="Enter Key">
+                    <button onclick="attemptLogin()" class="w-full bg-charcoal text-white py-3 text-xs uppercase tracking-[0.2em] hover:bg-bronze transition-colors duration-300">
+                        Authenticate
+                    </button>
+                    <button onclick="exitAdmin()" class="block w-full mt-4 text-[10px] uppercase tracking-widest text-gray-500 hover:text-black">Return to Site</button>
+                </div>
+            </div>
+        </div>
+
+        <aside class="w-64 bg-charcoal text-white/60 flex flex-col justify-between hidden" id="admin-sidebar">
+            <div>
+                <div class="h-20 flex items-center px-8 border-b border-white/10">
+                    <span class="font-serif text-xl tracking-widest text-white">AETHERIA</span>
+                </div>
+                <nav class="mt-8 space-y-1">
+                    <button onclick="switchTab('dashboard')" class="sidebar-link active w-full flex items-center px-8 py-4 hover:text-white transition-colors">
+                        <span class="text-xs uppercase tracking-wider">Overview</span>
+                    </button>
+                    <button onclick="switchTab('reservations')" class="sidebar-link w-full flex items-center px-8 py-4 hover:text-white transition-colors">
+                        <span class="text-xs uppercase tracking-wider">Reservations</span>
+                    </button>
+                </nav>
+            </div>
+            <div class="p-8 border-t border-white/10">
+                <button onclick="exitAdmin()" class="text-xs uppercase tracking-widest hover:text-white flex items-center gap-2">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    Log Out
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto hidden bg-[#F9F8F6]" id="admin-content">
+            
+            <header class="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-10 sticky top-0 z-20">
+                <h2 class="font-serif text-2xl text-charcoal" id="page-title">Dashboard Overview</h2>
+                <div class="flex items-center gap-6">
+                    <span class="text-xs uppercase tracking-widest text-gray-400">Oct 24, 2024</span>
+                    <button class="bg-charcoal text-white px-6 py-2 text-[10px] uppercase tracking-[0.2em] hover:bg-bronze transition-colors">New Booking</button>
+                </div>
+            </header>
+
+            <div id="view-dashboard" class="p-10">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                    <div class="bg-white p-6 shadow-sm border border-gray-100">
+                        <p class="text-[10px] uppercase tracking-wider text-gray-400 mb-2">Check-ins</p>
+                        <span class="font-serif text-4xl text-charcoal">12</span>
+                    </div>
+                    <div class="bg-white p-6 shadow-sm border border-gray-100">
+                        <p class="text-[10px] uppercase tracking-wider text-gray-400 mb-2">Occupancy</p>
+                        <span class="font-serif text-4xl text-charcoal">84%</span>
+                    </div>
+                    <div class="bg-white p-6 shadow-sm border border-gray-100">
+                        <p class="text-[10px] uppercase tracking-wider text-gray-400 mb-2">Revenue</p>
+                        <span class="font-serif text-4xl text-charcoal">$214k</span>
+                    </div>
+                </div>
+                
+                <div class="bg-white shadow-sm border border-gray-100 p-8">
+                    <h3 class="font-serif text-xl mb-6">Recent Activity</h3>
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b border-gray-100 text-[10px] uppercase tracking-wider text-gray-400">
+                                <th class="pb-3 font-medium">Guest</th>
+                                <th class="pb-3 font-medium">Room</th>
+                                <th class="pb-3 font-medium">Dates</th>
+                                <th class="pb-3 font-medium">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            <tr class="border-b border-gray-50 hover:bg-ivory transition-colors">
+                                <td class="py-4 font-medium text-charcoal">Elena Rossi</td>
+                                <td class="py-4 text-gray-500">The Obsidian</td>
+                                <td class="py-4 text-gray-500">Oct 24 - 28</td>
+                                <td class="py-4"><span class="status-badge status-confirmed">Confirmed</span></td>
+                            </tr>
+                            <tr class="border-b border-gray-50 hover:bg-ivory transition-colors">
+                                <td class="py-4 font-medium text-charcoal">Marcus Thorne</td>
+                                <td class="py-4 text-gray-500">The Driftwood</td>
+                                <td class="py-4 text-gray-500">Oct 25 - 27</td>
+                                <td class="py-4"><span class="status-badge status-pending">Pending</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="view-reservations" class="p-10 hidden">
+                <div class="flex gap-4 mb-8">
+                    <button class="px-4 py-2 bg-white border border-gray-200 text-xs uppercase tracking-wider hover:border-bronze">All</button>
+                    <button class="px-4 py-2 bg-white border border-gray-200 text-xs uppercase tracking-wider hover:border-bronze">Pending</button>
+                    <div class="flex-grow"></div>
+                    <button class="text-bronze text-xs uppercase tracking-wider hover:underline">Export CSV</button>
+                </div>
+                <div class="bg-white shadow-sm border border-gray-100">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="bg-gray-50 text-[10px] uppercase tracking-wider text-gray-500 border-b border-gray-200">
+                                <th class="p-4 font-medium">ID</th>
+                                <th class="p-4 font-medium">Guest Name</th>
+                                <th class="p-4 font-medium">Room Type</th>
+                                <th class="p-4 font-medium">Check In</th>
+                                <th class="p-4 font-medium">Status</th>
+                                <th class="p-4 font-medium">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-gray-100" id="full-res-table">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        // --- 1. PRELOADER SEQUENCE ---
+        const tlLoader = gsap.timeline();
+        
+        tlLoader
+            .to("#loader-text", { y: 0, duration: 1.2, ease: "power4.out", delay: 0.5 })
+            .to("#loader-line", { width: "100px", duration: 1, ease: "power2.inOut" }, "-=0.8")
+            .to("#preloader", { yPercent: -100, duration: 1.2, ease: "power4.inOut", delay: 0.5 })
+            // Start Hero Animations
+            .to("#nav-bar", { opacity: 1, duration: 1 })
+            .to(".hero-title-line", { y: "0%", duration: 1.5, ease: "power4.out", stagger: 0.2 }, "-=1")
+            .to(".reveal-opacity", { opacity: 1, y: 0, duration: 1, ease: "power2.out" }, "-=1");
+
+
+        // --- 2. SMOOTH SCROLL (LENIS) ---
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            direction: 'vertical',
+            smooth: true,
+            mouseMultiplier: 1,
+            touchMultiplier: 2,
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+
+        // --- 3. SCROLL ANIMATIONS (GSAP) ---
+        
+        // Parallax Hero Image
+        gsap.to("#hero-bg", {
+            scrollTrigger: { trigger: "body", start: "top top", end: "bottom top", scrub: true },
+            y: 300 
+        });
+
+        // Horizontal Scroll Section
+        let sections = gsap.utils.toArray("#suite-wrapper > div");
+        gsap.to(sections, {
+            xPercent: -100 * (sections.length - 1),
+            ease: "none",
+            scrollTrigger: {
+                trigger: "#suites",
+                pin: true,
+                scrub: 1,
+                end: "+=3000", 
+            }
+        });
+
+
+        // --- 4. CUSTOM CURSOR LOGIC ---
+        const cursorDot = document.querySelector(".cursor-dot");
+        const cursorOutline = document.querySelector(".cursor-outline");
+        // Update selector to include admin elements if needed, or keep to public
+        const hoverTriggers = document.querySelectorAll(".hover-trigger");
+
+        window.addEventListener("mousemove", (e) => {
+            const posX = e.clientX;
+            const posY = e.clientY;
+            cursorDot.style.left = `${posX}px`;
+            cursorDot.style.top = `${posY}px`;
+            cursorOutline.animate({ left: `${posX}px`, top: `${posY}px` }, { duration: 500, fill: "forwards" });
+        });
+
+        // Event delegation for hover effects (better for dynamic content)
+        document.body.addEventListener('mouseover', (e) => {
+            if (e.target.closest('.hover-trigger')) {
+                cursorOutline.style.transform = "translate(-50%, -50%) scale(1.5)";
+                cursorOutline.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+                cursorDot.style.opacity = "0";
+            } else {
+                cursorOutline.style.transform = "translate(-50%, -50%) scale(1)";
+                cursorOutline.style.backgroundColor = "transparent";
+                cursorDot.style.opacity = "1";
+            }
+        });
+
+
+        // --- 5. ADMIN APP SWITCHING LOGIC ---
+
+        function switchToAdmin() {
+            const publicApp = document.getElementById('app-public');
+            const adminApp = document.getElementById('app-admin');
+            const cursor = document.getElementById('custom-cursor');
+
+            gsap.to(publicApp, { opacity: 0, duration: 0.5, onComplete: () => {
+                publicApp.classList.add('hidden-app');
+                adminApp.classList.remove('hidden-app');
+                
+                // Disable public site interactions
+                cursor.style.display = 'none'; 
+                document.body.style.cursor = 'auto'; // Restore default cursor
+                lenis.stop(); // Stop scroll hijacking
+                
+                gsap.fromTo(adminApp, { opacity: 0 }, { opacity: 1, duration: 0.5 });
+            }});
+        }
+
+        function exitAdmin() {
+            const publicApp = document.getElementById('app-public');
+            const adminApp = document.getElementById('app-admin');
+            const cursor = document.getElementById('custom-cursor');
+            
+            // Admin Reset Elements
+            const loginScreen = document.getElementById('admin-login-screen');
+            const sidebar = document.getElementById('admin-sidebar');
+            const content = document.getElementById('admin-content');
+
+            gsap.to(adminApp, { opacity: 0, duration: 0.5, onComplete: () => {
+                adminApp.classList.add('hidden-app');
+                
+                // Reset Admin State
+                loginScreen.style.transform = 'translateY(0)';
+                sidebar.classList.add('hidden');
+                content.classList.add('hidden');
+
+                publicApp.classList.remove('hidden-app');
+                
+                // Restore public site interactions
+                cursor.style.display = 'block'; 
+                document.body.style.cursor = 'none'; 
+                lenis.start(); 
+                
+                gsap.fromTo(publicApp, { opacity: 0 }, { opacity: 1, duration: 0.5 });
+            }});
+        }
+
+        // --- 6. ADMIN DASHBOARD LOGIC ---
+        
+        const reservations = [
+            { id: '#8492', name: 'Elena Rossi', room: 'The Obsidian', in: 'Oct 24', status: 'confirmed' },
+            { id: '#8493', name: 'Marcus Thorne', room: 'Driftwood Suite', in: 'Oct 24', status: 'checked-in' },
+            { id: '#8494', name: 'Sarah Jenkins', room: 'Garden Villa', in: 'Nov 01', status: 'pending' },
+            { id: '#8495', name: 'James Wu', room: 'The Obsidian', in: 'Nov 02', status: 'confirmed' },
+        ];
+
+        function attemptLogin() {
+            const btn = document.querySelector('#admin-login-screen button');
+            const pass = document.getElementById('admin-pass').value;
+            
+            btn.innerText = "VERIFYING...";
+            
+            setTimeout(() => {
+                gsap.to('#admin-login-screen', { yPercent: -100, duration: 0.8, ease: "power4.inOut" });
+                document.getElementById('admin-sidebar').classList.remove('hidden');
+                document.getElementById('admin-content').classList.remove('hidden');
+                renderAdminTable();
+                btn.innerText = "AUTHENTICATE";
+            }, 800);
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            ['dashboard', 'reservations'].forEach(v => {
+                document.getElementById('view-'+v).classList.add('hidden');
+            });
+            document.getElementById('view-'+tabName).classList.remove('hidden');
+        }
+
+        function renderAdminTable() {
+            const tbody = document.getElementById('full-res-table');
+            tbody.innerHTML = '';
+            
+            reservations.forEach(res => {
+                let statusClass = res.status === 'confirmed' ? 'status-confirmed' : res.status === 'checked-in' ? 'status-checked-in' : 'status-pending';
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-4 font-mono text-xs text-gray-500">${res.id}</td>
+                    <td class="p-4 font-medium text-charcoal">${res.name}</td>
+                    <td class="p-4 text-gray-500">${res.room}</td>
+                    <td class="p-4 text-gray-500">${res.in}</td>
+                    <td class="p-4"><span class="status-badge ${statusClass}">${res.status}</span></td>
+                    <td class="p-4"><button class="text-gray-400 hover:text-bronze">Edit</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portfolio | Ethan Wright</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- IMPORT MAP PRO THREE.JS -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+
+    <style>
+        /* --- 1. ZÁKLADNÍ NASTAVENÍ --- */
+        :root {
+            --bg: #ffffff;
+            --text: #050505;
+            --text-light: #555555;
+            --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+            --glitch-red: rgba(255, 0, 80, 0.5);
+            --glitch-blue: rgba(0, 255, 255, 0.5);
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        /* Skrytí nativního kurzoru na PC */
+        @media (min-width: 769px) {
+            body, a, button, .project-item {
+                cursor: none !important;
+            }
+        }
+
+        html {
+            width: 100%;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            width: 100%;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            position: relative;
+        }
+
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; padding: 0; margin: 0; }
+        button { border: none; background: none; cursor: pointer; color: inherit; font-family: inherit; }
+
+        /* --- AWWWARDS PRVKY --- */
+        /* Jemný šum přes celou obrazovku */
+        .noise-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 800; opacity: 0.04;
+            background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+        }
+
+        /* Scroll Progress Bar */
+        .scroll-progress {
+            position: fixed; top: 0; left: 0; height: 3px; background: var(--text);
+            z-index: 10000; width: 0%; transform-origin: left;
+        }
+
+        /* Obří typografický watermark na pozadí */
+        .bg-watermark {
+            position: fixed; top: 40%; left: -5%; font-family: 'Syne', sans-serif;
+            font-size: 18vw; font-weight: 800; color: transparent;
+            -webkit-text-stroke: 1px rgba(0,0,0,0.03); pointer-events: none;
+            z-index: 0; transform: rotate(-90deg) translateY(-50%); white-space: nowrap;
+            will-change: transform;
+        }
+
+        /* Technické detaily v rozích */
+        .tech-details {
+            position: absolute; bottom: 40px; right: 50px; font-family: 'Inter', sans-serif;
+            font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-light);
+            text-align: right; line-height: 1.6; z-index: 100;
+        }
+        .tech-details span { display: block; }
+
+        /* Scroll Indicator v Hero */
+        .scroll-indicator {
+            position: absolute; bottom: 100px; left: 50px; display: flex; align-items: center; gap: 15px;
+            transform: rotate(-90deg); transform-origin: left bottom; z-index: 100; pointer-events: none;
+        }
+        .scroll-text { font-family: 'Inter', sans-serif; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text); }
+        .scroll-line-wrapper { width: 60px; height: 1px; background: rgba(0,0,0,0.2); position: relative; overflow: hidden; }
+        .scroll-line-inner { position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: var(--text); animation: scroll-line-anim 2s cubic-bezier(0.19, 1, 0.22, 1) infinite; }
+        @keyframes scroll-line-anim { 0% { left: -100%; } 50% { left: 0; } 100% { left: 100%; } }
+
+        /* Architektonický Grid v Hero */
+        .hero-grid {
+            position: absolute; inset: 0; pointer-events: none; z-index: 1; display: flex; justify-content: space-between; padding: 0 15vw;
+        }
+        .hero-grid-line { width: 1px; height: 100vh; background: rgba(0,0,0,0.03); }
+
+        /* --- VLASTNÍ KURZOR --- */
+        #custom-cursor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 20px;
+            height: 20px;
+            background-color: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            mix-blend-mode: difference;
+            transition: transform 0.1s ease-out, width 0.3s var(--ease-out-expo), height 0.3s var(--ease-out-expo), background-color 0.3s;
+            transform: translate(-50%, -50%);
+        }
+        #custom-cursor.hovered {
+            width: 80px;
+            height: 80px;
+        }
+        @media (max-width: 768px) { 
+            #custom-cursor, .bg-watermark, .tech-details, .scroll-indicator, .hero-grid { display: none; } 
+        }
+
+        /* --- 2. VRSTVY --- */
+        #webgl-glass { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 0; pointer-events: none; display: block; 
+        }
+        
+        #pixel-canvas { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            z-index: 10; pointer-events: auto; display: block;
+        }
+        @media (max-width: 768px) { #pixel-canvas { display: none !important; pointer-events: none; } }
+
+        /* --- 3. LOADER --- */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 9999;
+            display: flex; justify-content: flex-end; align-items: flex-end; padding: 40px;
+            transition: transform 0.8s cubic-bezier(0.85, 0, 0.15, 1);
+        }
+        .loader-content { 
+            text-align: right; 
+            font-family: 'Inter', sans-serif; 
+            font-variant-numeric: tabular-nums; 
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+        .loader-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-light);
+            margin-bottom: 0px;
+            font-weight: 600;
+        }
+        #loader-percent { font-size: 3rem; font-weight: 300; display: block; line-height: 1; margin-top: 5px; }
+        #loader-line { width: 100%; height: 2px; background: #000; margin-top: 10px; transform-origin: right; transform: scaleX(0); transition: transform 0.2s; }
+
+        /* --- 4. UI ELEMENTY --- */
+        nav {
+            position: fixed; top: 0; left: 0; width: 100%; padding: 40px 50px; 
+            display: flex; justify-content: space-between; align-items: center;
+            background: transparent; mix-blend-mode: exclusion; color: white;
+            transition: all 0.4s var(--ease-out-expo); pointer-events: none; z-index: 500;
+        }
+        nav .logo, nav .menu-btn { pointer-events: auto; display: inline-block; transition: transform 0.3s var(--ease-out-expo); }
+
+        nav.scrolled {
+            padding: 20px 50px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px);
+            mix-blend-mode: normal; color: #000; border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; }
+        .menu-btn { font-family: 'Syne', sans-serif; font-weight: 700; text-transform: uppercase; font-size: 0.9rem; }
+
+        #menu-overlay {
+            position: fixed; inset: 0; background: #0a0a0a; color: #fff;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.5s var(--ease-out-expo);
+            z-index: 999;
+        }
+        #menu-overlay.active { opacity: 1; pointer-events: auto; }
+        
+        .menu-link {
+            font-family: 'Syne', sans-serif; font-size: 4rem; font-weight: 800;
+            color: transparent; -webkit-text-stroke: 1px #666; display: block; margin: 5px 0;
+            transform: translateY(100%); transition: transform 0.5s ease, color 0.3s;
+        }
+        #menu-overlay.active .menu-link { transform: translateY(0); }
+        .menu-link:hover { color: #fff; -webkit-text-stroke: 1px #fff; transform: scale(1.05) !important; }
+        .close-btn { position: absolute; top: 40px; right: 50px; font-family: 'Syne', sans-serif; font-weight: 700; text-transform: uppercase; pointer-events: auto; }
+
+        /* MAIN CONTENT */
+        main { width: 100%; position: relative; z-index: 100; }
+        
+        .hero { height: 100vh; width: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: none; position: relative; }
+        
+        .hero-content { position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; }
+        .hero-name { font-family: 'Inter', sans-serif; font-size: 1rem; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 30px; color: var(--text-light); }
+        h1 { font-family: 'Syne', sans-serif; font-size: 11vw; line-height: 0.85; text-align: center; color: var(--text); letter-spacing: -0.04em; margin: 0; overflow: hidden; width: 100%; }
+        .role { font-family: 'Inter', sans-serif; margin-top: 30px; text-transform: uppercase; letter-spacing: 2px; font-size: 0.9rem; color: var(--text-light); opacity: 0; animation: fadeUp 1s ease 1s forwards; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .char { display: inline-block; opacity: 0; transform: translateY(100%) rotate(10deg); transition: transform 1s var(--ease-out-expo), opacity 1s var(--ease-out-expo); }
+        .hero-title.animate .char { opacity: 1; transform: translateY(0) rotate(0deg); }
+        .reveal-text { opacity: 0; transform: translateY(30px); transition: all 1s var(--ease-out-expo); }
+        .reveal-text.active { opacity: 1; transform: translateY(0); }
+
+        .marquee-wrapper { width: 100%; overflow: hidden; border-top: 1px solid #111; border-bottom: 1px solid #111; background: #fff; padding: 20px 0; display: flex; align-items: center; position: relative; pointer-events: auto; }
+        .marquee-content { display: flex; white-space: nowrap; }
+        .marquee-item { font-family: 'Syne', sans-serif; font-size: 5rem; font-weight: 800; text-transform: uppercase; padding: 0 40px; color: transparent; -webkit-text-stroke: 1px #000; position: relative; }
+        .marquee-item::after { content: "✦"; font-size: 2rem; position: absolute; right: -10px; top: 50%; transform: translateY(-50%); color: #000; -webkit-text-stroke: 0; }
+
+        section { padding: 150px 50px; border-top: 1px solid #eee; background: rgba(255,255,255,0.85); backdrop-filter: blur(5px); width: 100%; position: relative; z-index: 10; overflow: hidden; }
+        .section-headline { font-family: 'Syne', sans-serif; font-size: 3.5rem; font-weight: 700; margin: 0 0 50px 0; max-width: 900px; line-height: 1.3; padding-bottom: 15px; position: relative; z-index: 2; }
+
+        /* --- DEKORATIVNÍ AWWWARDS PRVKY PRO ABOUT --- */
+        .section-meta { display: flex; align-items: center; gap: 20px; font-family: 'Inter', sans-serif; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 3px; color: var(--text-light); margin-bottom: 30px; position: relative; z-index: 2; }
+        .meta-line { width: 50px; height: 1px; background: rgba(0,0,0,0.2); }
+        
+        .about-bg-watermark { position: absolute; top: 10%; right: -5%; font-family: 'Syne', sans-serif; font-size: 15vw; font-weight: 800; color: transparent; -webkit-text-stroke: 1px rgba(0,0,0,0.03); pointer-events: none; z-index: 0; white-space: nowrap; user-select: none; }
+        
+        .deco-cross { position: absolute; color: rgba(0,0,0,0.3); font-size: 1.2rem; font-weight: 300; font-family: 'Inter', sans-serif; pointer-events: none; z-index: 1; }
+        .deco-cross.tl { top: 40px; left: 40px; }
+        .deco-cross.tr { top: 40px; right: 40px; }
+        .deco-cross.bl { bottom: 40px; left: 40px; }
+        .deco-cross.br { bottom: 40px; right: 40px; }
+
+        /* --- NOVÝ PRVEK: AVAILABILITY STATUS --- */
+        .availability-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 50px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text);
+            margin-left: 10px;
+            cursor: default;
+            transition: border-color 0.3s;
+        }
+        .availability-status:hover {
+            border-color: rgba(0,0,0,0.3);
+        }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            position: relative;
+        }
+        .pulse-dot::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border: 1px solid #10b981;
+            border-radius: 50%;
+            animation: pulse-anim 2s cubic-bezier(0.19, 1, 0.22, 1) infinite;
+        }
+        @keyframes pulse-anim {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        /* --- ABOUT SEKCE S GLITCH EFEKTEM --- */
+        .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; margin-top: 40px; position: relative; z-index: 2; }
+        .about-text-content { display: flex; flex-direction: column; gap: 20px; }
+        
+        .about-image-container { 
+            position: relative; 
+            border-radius: 20px; 
+            overflow: visible; 
+            perspective: 1000px; 
+            max-width: 420px; 
+            width: 100%;
+            margin-left: auto; 
+            z-index: 5;
+        }
+        
+        /* --- NOVÝ EFEKT: TECH FRAME KOLEM FOTKY --- */
+        .tech-frame { position: absolute; inset: -10px; border: 1px solid rgba(0,0,0,0.05); border-radius: 26px; z-index: 0; pointer-events: none; transition: inset 0.6s var(--ease-out-expo), border-color 0.6s; }
+        .about-image-container:hover .tech-frame { inset: -20px; border-color: rgba(0,0,0,0.15); }
+        .tech-frame-bg { position: absolute; inset: 0; border-radius: 26px; overflow: hidden; }
+        .scanner-line { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: linear-gradient(90deg, transparent, var(--text), transparent); opacity: 0; transition: opacity 0.3s; }
+        .about-image-container:hover .scanner-line { opacity: 0.3; animation: scan-anim 2s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+        @keyframes scan-anim { 0% { top: -10%; } 100% { top: 110%; } }
+        
+        .tech-frame::before, .tech-frame::after, .tech-frame-inner::before, .tech-frame-inner::after { content: ''; position: absolute; width: 20px; height: 20px; border-color: var(--text); border-style: solid; opacity: 0.2; transition: width 0.5s var(--ease-out-expo), height 0.5s var(--ease-out-expo), opacity 0.5s; }
+        .tech-frame::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; border-top-left-radius: 26px; }
+        .tech-frame::after { top: -1px; right: -1px; border-width: 2px 2px 0 0; border-top-right-radius: 26px; }
+        .tech-frame-inner { position: absolute; inset: 0; pointer-events: none; }
+        .tech-frame-inner::before { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; border-bottom-left-radius: 26px; }
+        .tech-frame-inner::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; border-bottom-right-radius: 26px; }
+        
+        .about-image-container:hover .tech-frame::before, .about-image-container:hover .tech-frame::after,
+        .about-image-container:hover .tech-frame-inner::before, .about-image-container:hover .tech-frame-inner::after { width: 40px; height: 40px; opacity: 0.8; }
+        /* --- KONEC EFEKTU --- */
+        
+        .about-image-inner { 
+            border-radius: 20px; 
+            overflow: hidden; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.05); 
+            position: relative; 
+            background: #000;
+            transition: transform 0.5s var(--ease-out-expo);
+            z-index: 2;
+        }
+
+        .about-image-inner img { 
+            width: 100%; 
+            height: auto; 
+            display: block; 
+            filter: grayscale(100%); 
+            transition: filter 0.6s var(--ease-out-expo);
+            position: relative;
+            z-index: 1;
+        }
+
+        .glitch-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=800&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .about-image-container:hover .about-image-inner img { filter: grayscale(0%); }
+
+        .about-image-container:hover .glitch-layer { opacity: 0.5; animation: glitch-anim 0.2s infinite; }
+        .about-image-container:hover .glitch-layer:nth-child(2) { filter: grayscale(0%) contrast(1.5) hue-rotate(90deg); animation-delay: 0.1s; }
+
+        @keyframes glitch-anim {
+            0% { transform: translate(0); clip-path: inset(10% 0 30% 0); }
+            20% { transform: translate(-5px, 5px); clip-path: inset(40% 0 10% 0); }
+            40% { transform: translate(5px, -5px); clip-path: inset(60% 0 5% 0); }
+            60% { transform: translate(-5px, 0); clip-path: inset(10% 0 70% 0); }
+            80% { transform: translate(5px, 2px); clip-path: inset(5% 0 20% 0); }
+            100% { transform: translate(0); clip-path: inset(10% 0 30% 0); }
+        }
+
+        .about-tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; align-items: center; }
+        .about-tag { padding: 8px 18px; border: 1px solid #eee; border-radius: 50px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text); transition: all 0.3s; cursor: default; }
+        .about-tag:hover { background: var(--text); color: var(--bg); border-color: var(--text); transform: translateY(-3px); }
+
+        .floating-stat-card { position: absolute; bottom: -20px; left: -20px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); padding: 25px 30px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.5); z-index: 5; transition: transform 0.5s var(--ease-out-expo); pointer-events: none; }
+        .about-image-container:hover .floating-stat-card { transform: translateY(-15px) rotate(-2deg); }
+        .floating-stat-card .stat-num { font-family: 'Syne', sans-serif; font-size: 3rem; font-weight: 800; display: block; line-height: 1; margin-bottom: 5px; color: var(--text); }
+        .floating-stat-card .stat-label { font-family: 'Inter', sans-serif; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: var(--text-light); }
+
+        /* --- DALŠÍ AWWWARDS DEKORACE --- */
+        .global-center-line { position: fixed; top: 0; left: 50%; width: 1px; height: 100vh; background: rgba(0,0,0,0.03); z-index: 0; pointer-events: none; }
+        
+        .services-bg-num { position: absolute; top: -50px; right: -5%; font-family: 'Syne', sans-serif; font-size: 35vw; font-weight: 800; color: transparent; -webkit-text-stroke: 1px rgba(0,0,0,0.03); z-index: 0; pointer-events: none; line-height: 1; user-select: none; }
+        .services-content-wrapper { position: relative; z-index: 2; width: 100%; }
+        
+        .vertical-side-text { position: absolute; right: 20px; top: 200px; transform: rotate(90deg); transform-origin: right top; font-family: 'Inter', sans-serif; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 4px; color: var(--text-light); pointer-events: none; white-space: nowrap; z-index: 5; }
+        
+        .footer-bg-text { position: absolute; bottom: -2vw; left: 0; width: 100%; text-align: center; font-family: 'Syne', sans-serif; font-size: 16vw; font-weight: 800; color: rgba(255,255,255,0.03); pointer-events: none; line-height: 0.75; overflow: hidden; white-space: nowrap; user-select: none; z-index: 0; }
+        
+        .footer-barcode { position: absolute; right: 50px; top: 100px; display: flex; gap: 3px; height: 40px; opacity: 0.3; z-index: 2; pointer-events: none; align-items: flex-end; }
+        .footer-barcode span { width: 2px; background: #fff; display: block; height: 100%; }
+        .footer-barcode span:nth-child(2n) { width: 1px; height: 70%; }
+        .footer-barcode span:nth-child(3n) { width: 4px; height: 90%; }
+        .footer-barcode span:nth-child(5n) { width: 1px; height: 100%; }
+
+        /* --- UNIKÁTNÍ ANIMACE DO PRÁZDNÝCH MÍST --- */
+        /* 1. Vertikální běžící texty na okrajích */
+        .edge-text { 
+            position: fixed; top: 0; bottom: 0; pointer-events: none; z-index: 900; 
+            display: flex; align-items: center; opacity: 0.03; font-family: 'Syne', sans-serif; 
+            font-size: 1.2rem; font-weight: 800; letter-spacing: 4px; overflow: hidden; 
+            mix-blend-mode: difference; color: #fff;
+        }
+        .edge-left { left: 20px; writing-mode: vertical-rl; transform: rotate(180deg); }
+        .edge-right { right: 20px; writing-mode: vertical-rl; }
+        
+        .edge-marquee { display: flex; gap: 2rem; animation: edgeMove 20s linear infinite; }
+        .edge-right .edge-marquee { animation-direction: reverse; }
+        @keyframes edgeMove { 
+            0% { transform: translateY(0); } 
+            100% { transform: translateY(-50%); } 
+        }
+
+        /* 2. Levitující Wireframe geometrie na pozadí */
+        .geo-shape { position: absolute; pointer-events: none; opacity: 0.03; z-index: 0; }
+        .geo-shape svg { width: 100%; height: 100%; stroke: var(--text); stroke-width: 1px; fill: none; }
+        
+        .geo-1 { 
+            top: 20%; left: 5%; width: 400px; height: 400px; 
+            animation: float-spin 35s linear infinite; 
+        }
+        .geo-2 { 
+            bottom: -10%; right: 5%; width: 300px; height: 300px; 
+            animation: float-spin-reverse 40s linear infinite; 
+        }
+        .geo-3 {
+            top: 40%; left: -5%; width: 500px; height: 500px;
+            animation: float-spin 45s linear infinite;
+        }
+
+        @keyframes float-spin {
+            0% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-80px) rotate(180deg); }
+            100% { transform: translateY(0) rotate(360deg); }
+        }
+        @keyframes float-spin-reverse {
+            0% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(60px) rotate(-180deg); }
+            100% { transform: translateY(0) rotate(-360deg); }
+        }
+        /* --- KONEC NOVÝCH ANIMACÍ --- */
+
+        .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px; width: 100%; }
+        .service-card { padding: 40px; border: 1px solid #eee; background: rgba(255,255,255,0.6); transition: transform 0.4s var(--ease-out-expo), border-color 0.4s; position: relative; overflow: hidden; }
+        .service-card:hover { transform: translateY(-10px); border-color: #000; background: #fff; }
+        .service-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.8rem; display: block; margin-bottom: 15px; }
+
+        .project-item { display: flex; justify-content: space-between; align-items: baseline; padding: 60px 0; border-bottom: 1px solid #eee; cursor: pointer; width: 100%; transition: padding 0.4s var(--ease-out-expo), background 0.4s; }
+        .project-item:hover { background: #fafafa; padding-left: 30px; padding-right: 30px; border-bottom-color: #000; }
+        .project-name { font-family: 'Syne', sans-serif; font-size: 4rem; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
+        .project-cat { font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 2px; color: var(--text-light); font-size: 0.9rem; }
+
+        /* --- NOVÉ ANIMACE --- */
+        .deco-cross { 
+            animation: cross-spin 10s linear infinite; 
+            transform-origin: center;
+        }
+        @keyframes cross-spin { 100% { transform: rotate(360deg); } }
+
+        footer { 
+            padding: 100px 50px 50px 50px; 
+            border-top: 1px solid #000; 
+            background: #050505; 
+            color: #fff;
+            width: 100%; 
+            display: flex;
+            flex-direction: column;
+            gap: 60px;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .email-link { 
+            font-family: 'Syne', sans-serif; 
+            font-size: 3rem; 
+            font-weight: 800; 
+            display: inline-block; 
+            margin: 20px 0 40px 0;
+            color: #fff;
+            position: relative;
+        }
+        .email-link::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0%; height: 3px; background: #fff; transition: width 0.4s var(--ease-out-expo); }
+        .email-link:hover::after { width: 100%; }
+
+        .social-links { display: flex; gap: 40px; flex-wrap: wrap; }
+        .social-link { font-family: 'Inter', sans-serif; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; color: #bbb; position: relative; padding-bottom: 5px; cursor: pointer; display: inline-block; transition: color 0.3s; }
+        .social-link::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0%; height: 1px; background: #fff; transition: width 0.3s; }
+        .social-link:hover { color: #fff; }
+        .social-link:hover::after { width: 100%; }
+
+        .footer-meta { display: flex; justify-content: space-between; font-size: 0.9rem; color: #888; padding-top: 40px; border-top: 1px solid rgba(255,255,255,0.1); }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 15vw; } .menu-link { font-size: 2.5rem; } nav, section, footer { padding: 40px 20px; }
+            .section-headline { font-size: 2.2rem; } .marquee-item { font-size: 3rem; padding: 0 20px; }
+            nav.scrolled { padding: 20px; } .close-btn { top: 20px; right: 20px; }
+            .service-card:hover { transform: none; } 
+            
+            /* Projekty mobile */
+            .about-grid { grid-template-columns: 1fr; gap: 40px; margin-top: 20px; }
+            .about-image-container { max-width: 100%; margin: 0 auto; }
+            .floating-stat-card { bottom: 10px; left: 10px; padding: 15px 20px; }
+            .floating-stat-card .stat-num { font-size: 2rem; }
+            
+            /* Skrytí některých dekorací na mobilu pro zachování čistoty */
+            .about-bg-text, .about-micro-text, .about-vert-line { display: none; }
+            .about-decor-shape { font-size: 6rem; left: auto; right: -20px; bottom: 5%; }
+            .global-center-line, .vertical-side-text, .footer-barcode { display: none; }
+            .services-bg-num { font-size: 60vw; top: 20px; right: -10%; }
+            .footer-bg-text { font-size: 22vw; bottom: 10px; }
+            
+            /* Skrytí okrajových animací na mobilu */
+            .edge-text, .geo-shape { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- GLOBÁLNÍ NOISE OVERLAY -->
+    <div class="noise-overlay"></div>
+
+    <!-- GLOBÁLNÍ STŘEDOVÁ LINKA -->
+    <div class="global-center-line"></div>
+
+    <!-- VERTIKÁLNÍ OKRAJOVÉ TEXTY -->
+    <div class="edge-text edge-left">
+        <div class="edge-marquee">
+            <span>AESTHETIC &nbsp; • &nbsp; DIGITAL EXPERIENCES &nbsp; • &nbsp; ENGINEERING &nbsp; • &nbsp; </span>
+            <span>AESTHETIC &nbsp; • &nbsp; DIGITAL EXPERIENCES &nbsp; • &nbsp; ENGINEERING &nbsp; • &nbsp; </span>
+        </div>
+    </div>
+    <div class="edge-text edge-right">
+        <div class="edge-marquee">
+            <span>CREATIVE DEVELOPMENT &nbsp; • &nbsp; WEBGL &nbsp; • &nbsp; MOTION &nbsp; • &nbsp; </span>
+            <span>CREATIVE DEVELOPMENT &nbsp; • &nbsp; WEBGL &nbsp; • &nbsp; MOTION &nbsp; • &nbsp; </span>
+        </div>
+    </div>
+
+    <!-- SCROLL PROGRESS -->
+    <div class="scroll-progress" id="scroll-progress"></div>
+
+    <!-- BACKGROUND WATERMARK -->
+    <div class="bg-watermark" id="bg-watermark">AESTHETIC</div>
+
+    <!-- VLASTNÍ KURZOR -->
+    <div id="custom-cursor"></div>
+
+    <div id="loader">
+        <div class="loader-content">
+            <div class="loader-label">Loading</div>
+            <div id="loader-percent">0%</div>
+            <div id="loader-line"></div>
+        </div>
+    </div>
+
+    <canvas id="webgl-glass"></canvas>
+    <canvas id="pixel-canvas"></canvas>
+
+    <div id="menu-overlay">
+        <button class="close-btn" onclick="toggleMenu()">Close</button>
+        <ul class="menu-links">
+            <li><a href="#about" class="menu-link" onclick="closeMenu()" style="transition-delay: 0.05s">About</a></li>
+            <li><a href="#services" class="menu-link" onclick="closeMenu()" style="transition-delay: 0.1s">Services</a></li>
+            <li><a href="#projects" class="menu-link" onclick="closeMenu()" style="transition-delay: 0.15s">Work</a></li>
+            <li><a href="#contact" class="menu-link" onclick="closeMenu()" style="transition-delay: 0.2s">Contact</a></li>
+        </ul>
+    </div>
+
+    <nav id="navbar">
+        <div class="logo magnetic">PORTFOLIO.</div>
+        <button class="menu-btn magnetic" onclick="toggleMenu()">Menu +</button>
+    </nav>
+
+    <main>
+        <div class="hero">
+            <!-- Architektonický Grid v pozadí Hero -->
+            <div class="hero-grid">
+                <div class="hero-grid-line"></div>
+                <div class="hero-grid-line"></div>
+                <div class="hero-grid-line"></div>
+                <div class="hero-grid-line"></div>
+            </div>
+
+            <!-- Detaily v rozích pro tech-vibe -->
+            <div class="scroll-indicator">
+                <span class="scroll-text">Scroll to explore</span>
+                <div class="scroll-line-wrapper"><div class="scroll-line-inner"></div></div>
+            </div>
+            
+            <div class="tech-details">
+                <span>INT. VERSION 2.4</span>
+                <span>LAT 49.2° N / LON 16.6° E</span>
+            </div>
+
+            <div class="hero-content">
+                <span class="hero-name reveal-text">Ethan Wright</span>
+                <h1 class="hero-title">DIGITAL<br>DESIGNER</h1>
+                <div class="role">Creative Developer & 3D Artist</div>
+            </div>
+        </div>
+
+        <div class="marquee-wrapper">
+            <div class="marquee-content" id="marquee">
+                <span class="marquee-item">Creative Development</span>
+                <span class="marquee-item">Web Design</span>
+                <span class="marquee-item">3D Experiences</span>
+                <span class="marquee-item">Motion Graphics</span>
+                <span class="marquee-item">UI/UX</span>
+                <span class="marquee-item">Creative Development</span>
+                <span class="marquee-item">Web Design</span>
+                <span class="marquee-item">3D Experiences</span>
+            </div>
+        </div>
+
+        <section id="about">
+            <!-- Plovoucí geometrie na pozadí (Terč) -->
+            <div class="geo-shape geo-1">
+                <svg viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="48" stroke-dasharray="4 4" />
+                    <circle cx="50" cy="50" r="38" />
+                    <circle cx="50" cy="50" r="28" stroke-dasharray="2 6" />
+                    <line x1="50" y1="0" x2="50" y2="100" stroke-width="0.5" />
+                    <line x1="0" y1="50" x2="100" y2="50" stroke-width="0.5" />
+                </svg>
+            </div>
+
+            <div class="deco-cross tl">+</div>
+            <div class="deco-cross tr">+</div>
+            <div class="deco-cross bl">+</div>
+            <div class="deco-cross br">+</div>
+
+            <!-- Background Watermark -->
+            <div class="about-bg-watermark">CREATOR</div>
+
+            <!-- Meta hlavička -->
+            <div class="section-meta reveal-text">
+                <span>[ 01 ]</span>
+                <span class="meta-line"></span>
+                <span>About Me</span>
+            </div>
+
+            <h2 class="section-headline reveal-text">I don't just build websites.<br>I <span style="font-style: italic; color: var(--text-light); font-weight: 500;">design</span> digital<br>realities.</h2>
+            <div class="about-grid">
+                <div class="about-text-content">
+                    <p class="reveal-text" style="font-size: 1.2rem; line-height: 1.6; transition-delay: 0.1s; margin-top: 0;">
+                        I am a developer obsessed with details. I believe the web isn't just about information, it's about a feeling. I use Three.js, WebGL, and modern animations to create something people will remember.
+                    </p>
+                    <div class="about-tags reveal-text" style="transition-delay: 0.15s;">
+                        <span class="about-tag magnetic">Three.js</span>
+                        <span class="about-tag magnetic">WebGL</span>
+                        <span class="about-tag magnetic">Creative UI</span>
+                        <span class="about-tag magnetic">Motion</span>
+                        
+                        <!-- Nový indikátor dostupnosti -->
+                        <div class="availability-status magnetic">
+                            <div class="pulse-dot"></div>
+                            <span>Available for work</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-image-container reveal-text" style="transition-delay: 0.2s;">
+                    <!-- Rámeček kolem fotky s efekty -->
+                    <div class="tech-frame">
+                        <div class="tech-frame-bg">
+                            <div class="scanner-line"></div>
+                        </div>
+                        <div class="tech-frame-inner"></div>
+                    </div>
+                    
+                    <div class="about-image-inner" id="glitch-wrapper">
+                        <!-- Glitch vrstvy -->
+                        <div class="glitch-layer"></div>
+                        <div class="glitch-layer"></div>
+                        <!-- Hlavní fotka -->
+                        <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=800&auto=format&fit=crop" alt="Portrét vývojáře" onerror="this.onerror=null;this.src='https://via.placeholder.com/800x1000?text=Foto+profilu';">
+                    </div>
+                    
+                    <div class="floating-stat-card">
+                        <span class="stat-num">5+</span>
+                        <span class="stat-label">Years of Exp.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="services">
+            <!-- Plovoucí geometrie na pozadí 2 (Abstraktní mnohoúhelník) -->
+            <div class="geo-shape geo-2">
+                <svg viewBox="0 0 100 100">
+                    <polygon points="50,5 95,25 95,75 50,95 5,75 5,25" />
+                    <polygon points="50,15 85,35 85,65 50,85 15,65 15,35" stroke-dasharray="2 4" />
+                    <line x1="5" y1="25" x2="95" y2="75" stroke-width="0.5" />
+                    <line x1="5" y1="75" x2="95" y2="25" stroke-width="0.5" />
+                </svg>
+            </div>
+            
+            <div class="geo-shape geo-3">
+                <svg viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="45" stroke-width="0.2"/>
+                    <rect x="15" y="15" width="70" height="70" stroke-dasharray="1 5" />
+                </svg>
+            </div>
+
+            <div class="services-bg-num">02</div>
+            <div class="services-content-wrapper">
+                <div class="section-meta reveal-text">
+                    <span>[ 02 ]</span>
+                    <span class="meta-line"></span>
+                    <span>Services</span>
+                </div>
+                <h2 class="section-headline reveal-text">Services</h2>
+                <div class="services-grid">
+                    <div class="service-card reveal-text" style="transition-delay: 0.1s;">
+                        <span class="service-title">Web Design</span>
+                        <p>Minimalist, clean design focused on typography and space.</p>
+                    </div>
+                    <div class="service-card reveal-text" style="transition-delay: 0.2s;">
+                        <span class="service-title">3D Development</span>
+                        <p>Interactive 3D scenes running smoothly right in the browser.</p>
+                    </div>
+                    <div class="service-card reveal-text" style="transition-delay: 0.3s;">
+                        <span class="service-title">Motion</span>
+                        <p>Advanced animations and micro-interactions for a premium feel.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="projects" style="position: relative;">
+            <!-- Vertikální dekorativní text -->
+            <div class="vertical-side-text">Selected works &mdash; 2024 to 2026</div>
+
+            <div class="section-meta reveal-text">
+                <span>[ 03 ]</span>
+                <span class="meta-line"></span>
+                <span>Selected Work</span>
+            </div>
+            <h2 class="section-headline reveal-text">Selected Work</h2>
+            
+            <a href="javascript:void(0)" class="project-item reveal-text magnetic">
+                <h2 class="project-name">Neon Gallery</h2>
+                <span class="project-cat">Web / 3D</span>
+            </a>
+            <a href="javascript:void(0)" class="project-item reveal-text magnetic" style="transition-delay: 0.1s;">
+                <h2 class="project-name">Future Bank</h2>
+                <span class="project-cat">App Design</span>
+            </a>
+            <a href="javascript:void(0)" class="project-item reveal-text magnetic" style="transition-delay: 0.2s;">
+                <h2 class="project-name">Urban Arch</h2>
+                <span class="project-cat">Portfolio</span>
+            </a>
+        </section>
+
+        <footer id="contact">
+            <!-- Obří text na pozadí -->
+            <div class="footer-bg-text">CONNECT</div>
+            
+            <!-- Čárový kód tech element -->
+            <div class="footer-barcode">
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+
+            <div class="footer-content">
+                <div class="section-meta reveal-text" style="color: #888;">
+                    <span>[ 04 ]</span>
+                    <span class="meta-line" style="background: rgba(255,255,255,0.2);"></span>
+                    <span>Collaboration</span>
+                </div>
+                <h2 class="reveal-text section-headline" style="margin-top: 20px; font-size: 2.5rem; color: #fff;">Have an idea?<br>Let's make it real.</h2>
+                
+                <a href="mailto:hello@example.com" class="email-link reveal-text magnetic">hello@email.com</a>
+                
+                <div class="social-links reveal-text">
+                    <a href="javascript:void(0)" class="social-link magnetic">Instagram</a>
+                    <a href="javascript:void(0)" class="social-link magnetic">Twitter / X</a>
+                    <a href="javascript:void(0)" class="social-link magnetic">LinkedIn</a>
+                    <a href="javascript:void(0)" class="social-link magnetic">GitHub</a>
+                </div>
+            </div>
+
+            <div class="footer-meta reveal-text">
+                <span>© 2026 Ethan Wright</span>
+                <span>All rights reserved.</span>
+            </div>
+        </footer>
+    </main>
+
+    <!-- JS: LOGIKA -->
+    <script>
+        // --- SCROLL PROGRESS A PARALLAX WATERMARK ---
+        const progressBar = document.getElementById('scroll-progress');
+        const watermark = document.getElementById('bg-watermark');
+        
+        window.addEventListener('scroll', () => {
+            // Progress Bar
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            if(progressBar) progressBar.style.width = scrolled + "%";
+            
+            // Watermark Parallax
+            if(watermark) {
+                const move = winScroll * 0.15;
+                watermark.style.transform = `rotate(-90deg) translate(-50%, ${move}px)`;
+            }
+
+            // Sticky Header
+            const navbar = document.getElementById('navbar');
+            if (winScroll > 50) navbar.classList.add('scrolled');
+            else navbar.classList.remove('scrolled');
+        });
+
+        // --- VLASTNÍ KURZOR LOGIKA ---
+        const cursor = document.getElementById('custom-cursor');
+        let cursorX = 0, cursorY = 0;
+        let mouseX = 0, mouseY = 0;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function animateCursor() {
+            cursorX += (mouseX - cursorX) * 0.15;
+            cursorY += (mouseY - cursorY) * 0.15;
+            cursor.style.transform = `translate(${cursorX}px, ${cursorY}px) translate(-50%, -50%)`;
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        // Hover efekty pro kurzor
+        const hoverables = document.querySelectorAll('a, button, .project-item, #glitch-wrapper, .about-tag');
+        hoverables.forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hovered'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hovered'));
+        });
+
+        // --- MAGNETICKÝ EFEKT ---
+        const magneticElements = document.querySelectorAll('.magnetic');
+        magneticElements.forEach(el => {
+            el.addEventListener('mousemove', (e) => {
+                const rect = el.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const moveX = (e.clientX - centerX) * 0.3;
+                const moveY = (e.clientY - centerY) * 0.3;
+                el.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+            el.addEventListener('mouseleave', () => {
+                el.style.transform = `translate(0, 0)`;
+            });
+        });
+
+        // LOADER
+        let loadProgress = 0;
+        const percentEl = document.getElementById('loader-percent');
+        const loaderLine = document.getElementById('loader-line');
+        const loader = document.getElementById('loader');
+        const heroTitle = document.querySelector('.hero-title');
+
+        const loadInterval = setInterval(() => {
+            loadProgress += Math.floor(Math.random() * 5) + 1;
+            if (loadProgress > 100) loadProgress = 100;
+            percentEl.textContent = loadProgress + '%';
+            loaderLine.style.transform = `scaleX(${loadProgress / 100})`;
+            if (loadProgress === 100) {
+                clearInterval(loadInterval);
+                setTimeout(() => {
+                    loader.style.transform = 'translateY(100%)';
+                    setTimeout(() => heroTitle.classList.add('animate'), 500);
+                }, 500);
+            }
+        }, 30);
+
+        // MENU
+        function toggleMenu() { document.getElementById('menu-overlay').classList.toggle('active'); }
+        function closeMenu() { document.getElementById('menu-overlay').classList.remove('active'); }
+
+        // HERO EFEKT
+        const splitText = (element) => {
+            const text = element.innerHTML;
+            element.innerHTML = text.split('<br>').map(line => {
+                return line.split('').map((char, i) => {
+                    if(char === ' ') return `<span class="char" style="transition-delay: ${i * 0.03}s">&nbsp;</span>`;
+                    return `<span class="char" style="transition-delay: ${i * 0.03}s">${char}</span>`;
+                }).join('');
+            }).join('<br>');
+        };
+        splitText(heroTitle);
+
+        // SCROLL REVEAL
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal-text').forEach(el => observer.observe(el));
+
+        // MARQUEE
+        let marqueeOffset = 0; 
+        const marqueeContent = document.getElementById('marquee');
+        let lastScrollY = window.scrollY; let scrollSpeed = 0;
+
+        window.addEventListener('scroll', () => {
+            const currentY = window.scrollY;
+            const delta = currentY - lastScrollY;
+            scrollSpeed = Math.abs(delta) * 0.5;
+            lastScrollY = currentY;
+        });
+
+        function animateMarquee() {
+            scrollSpeed *= 0.95; 
+            const finalSpeed = 2 + scrollSpeed;
+            marqueeOffset -= finalSpeed;
+            if (marqueeOffset <= -marqueeContent.scrollWidth / 2) marqueeOffset = 0;
+            marqueeContent.style.transform = `translateX(${marqueeOffset}px)`;
+            requestAnimationFrame(animateMarquee);
+        }
+        marqueeContent.innerHTML += marqueeContent.innerHTML;
+        animateMarquee();
+
+        // MAGNETIC TILT EFEKT PRO FOTKU
+        const glitchWrapper = document.getElementById('glitch-wrapper');
+        if (glitchWrapper) {
+            glitchWrapper.parentElement.addEventListener('mousemove', (e) => {
+                const rect = glitchWrapper.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = (y - centerY) / 20;
+                const rotateY = (centerX - x) / 20;
+                
+                glitchWrapper.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            });
+            
+            glitchWrapper.parentElement.addEventListener('mouseleave', () => {
+                glitchWrapper.style.transform = `rotateX(0deg) rotateY(0deg)`;
+            });
+        }
+
+        // --- PARALLAX EFEKT PRO FOTKU V ABOUT SEKCI ---
+        const aboutImageContainer = document.querySelector('.about-image-container');
+        window.addEventListener('scroll', () => {
+            if (aboutImageContainer && window.innerWidth > 768) {
+                const rect = aboutImageContainer.getBoundingClientRect();
+                const center = window.innerHeight / 2;
+                // Aplikovat pouze pokud je fotka na obrazovce
+                if (rect.top < window.innerHeight && rect.bottom > 0) {
+                    const distFromCenter = rect.top - center + (rect.height / 2);
+                    aboutImageContainer.style.transform = `translateY(${distFromCenter * 0.08}px)`;
+                }
+            }
+        });
+
+    </script>
+
+    <!-- 3D SKLO S KLIK ROTACÍ -->
+    <script type="module">
+        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+        const canvas = document.querySelector('#webgl-glass');
+        const scene = new THREE.Scene();
+        // Na mobilu nezobrazovat kvůli výkonu a čistému backgroundu pro Noise, na PC nechat průhledné
+        scene.background = null; 
+        
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.z = 20;
+
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.setClearColor(0x000000, 0); // Transparentní pozadí pro 3D
+
+        // ČISTÉ SKLO
+        const geometry = new THREE.TorusKnotGeometry(3.5, 1.2, 128, 32);
+        const material = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff, metalness: 0.1, roughness: 0.05,
+            transmission: 1, thickness: 2, ior: 1.5, clearcoat: 1, side: THREE.DoubleSide
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        const l1 = new THREE.PointLight(0x44aaff, 3, 50); l1.position.set(-10, 5, 5); scene.add(l1);
+        const l2 = new THREE.PointLight(0xff44aa, 3, 50); l2.position.set(10, -5, 5); scene.add(l2);
+
+        // --- ROTACE LOGIKA (MYŠ + KLIK) ---
+        let targetRotationY = 0;
+        let currentRotationY = 0;
+        let mouse3DX = 0, mouse3DY = 0;
+        let clickRotationVelocity = 0;
+
+        window.addEventListener('mousemove', (e) => {
+            mouse3DX = (e.clientX - window.innerWidth/2) * 0.0005;
+            mouse3DY = (e.clientY - window.innerHeight/2) * 0.0005;
+        });
+
+        window.addEventListener('mousedown', (e) => {
+            // Zabránit roztočení, pokud klikáme na fotku
+            if (e.target.closest('.about-image-container')) return;
+            if (window.innerWidth > 768) clickRotationVelocity = 0.2;
+        });
+
+        window.addEventListener('wheel', (e) => {
+            targetRotationY += e.deltaX * 0.005;
+        }, { passive: true });
+
+        // Mobile touch
+        let touchStartX = 0, touchPreviousX = 0, touchStartY = 0, touchPreviousY = 0;
+        window.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            touchPreviousX = touchStartX;
+            touchPreviousY = touchStartY;
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            const currentX = e.touches[0].clientX;
+            const currentY = e.touches[0].clientY;
+            const deltaX = currentX - touchPreviousX;
+            const deltaY = currentY - touchPreviousY;
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                targetRotationY += deltaX * 0.01;
+            }
+            touchPreviousX = currentX;
+            touchPreviousY = currentY;
+        }, { passive: true });
+
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const t = clock.getElapsedTime();
+
+            const baseRotationX = Math.sin(t * 0.3) * 0.3 + mouse3DY;
+            const baseRotationY = t * 0.2 + mouse3DX;
+
+            targetRotationY *= 0.95; 
+            currentRotationY += targetRotationY;
+            currentRotationY += clickRotationVelocity;
+            clickRotationVelocity *= 0.95;
+
+            mesh.rotation.x = baseRotationX;
+            mesh.rotation.y = baseRotationY + currentRotationY;
+            mesh.position.y = window.scrollY * 0.005;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth/window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+
+    <!-- PIXEL EFEKT -->
+    <script>
+        const canvasPixel = document.getElementById('pixel-canvas');
+        if (window.innerWidth > 768) {
+            const ctx = canvasPixel.getContext('2d');
+            let width, height, gridSize = 20, cols, rows, grid = [], waves = [];
+
+            class Pixel {
+                constructor(x, y) {
+                    this.x = x; this.y = y; this.size = gridSize; this.alpha = 0; this.scale = 1; this.decay = 0.03 + Math.random()*0.02;
+                }
+                trigger() { this.alpha = 1; this.scale = 1; }
+                update() {
+                    if (this.alpha > 0) {
+                        this.alpha -= this.decay;
+                        this.scale = 0.3 + (this.alpha * 0.7);
+                        if (this.alpha < 0) this.alpha = 0;
+                    }
+                }
+                draw() {
+                    if (this.alpha > 0.01) {
+                        ctx.fillStyle = `rgba(0,0,0,${this.alpha})`;
+                        const radius = (this.size * this.scale) / 2;
+                        ctx.beginPath();
+                        ctx.arc(this.x + this.size / 2, this.y + this.size / 2, radius, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+
+            class Wave {
+                constructor(x, y) {
+                    this.x = x; this.y = y; this.radius = 0; this.maxRadius = Math.max(width, height); this.speed = 25; this.active = true;
+                }
+                update() { this.radius += this.speed; if(this.radius > this.maxRadius) this.active = false; }
+            }
+
+            function initPixels() {
+                width = window.innerWidth; height = window.innerHeight;
+                canvasPixel.width = width; canvasPixel.height = height;
+                cols = Math.ceil(width/gridSize); rows = Math.ceil(height/gridSize);
+                grid = new Array(cols).fill(0).map((_, i) => new Array(rows).fill(0).map((_, j) => new Pixel(i*gridSize, j*gridSize)));
+            }
+
+            window.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.about-image-container')) return;
+                waves.push(new Wave(e.clientX, e.clientY));
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                const cx = Math.floor(e.clientX/gridSize), cy = Math.floor(e.clientY/gridSize), r = 2;
+                for(let i=-r; i<=r; i++) {
+                    for(let j=-r; j<=r; j++) {
+                        const col = cx+i, row = cy+j;
+                        if(col >= 0 && col < cols && row >= 0 && row < rows) {
+                            if(Math.random()>0.3) grid[col][row].trigger();
+                        }
+                    }
+                }
+            });
+
+            function animatePixels() {
+                ctx.clearRect(0, 0, width, height);
+                waves = waves.filter(w => w.active);
+                waves.forEach(w => w.update());
+                
+                for(let i=0; i<cols; i++) {
+                    for(let j=0; j<rows; j++) {
+                        const p = grid[i][j];
+                        waves.forEach(w => {
+                            const dx = p.x - w.x, dy = p.y - w.y, dist = Math.sqrt(dx*dx + dy*dy);
+                            if(Math.abs(dist - w.radius) < 30) p.trigger();
+                        });
+                        if(p.alpha > 0) { p.update(); p.draw(); }
+                    }
+                }
+                requestAnimationFrame(animatePixels);
+            }
+
+            initPixels(); animatePixels();
+            window.addEventListener('resize', initPixels);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="cs" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwiftDesign | Premium Studio</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        luxury: {
+                            black: '#030303',
+                            charcoal: '#0a0a0a',
+                            muted: '#737373',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #030303; color: #e5e5e5; overflow-x: hidden; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050505; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        
+        .noise-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 50; opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='1'/%3E%3C/svg%3E");
+        }
+
+        .glass {
+            background: rgba(3, 3, 3, 0.6);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .service-card { position: relative; overflow: hidden; transition: background-color 0.5s ease; }
+        .service-card::after {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, white, transparent);
+            transform: scaleX(0); transform-origin: left;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); z-index: 10;
+        }
+        .service-card:hover::after { transform: scaleX(1); }
+        .service-card:hover { background-color: rgba(255, 255, 255, 0.03); }
+
+        .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.6; will-change: transform; }
+
+        .demo-content { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.5s ease; }
+        .demo-item.active .demo-content { max-height: 800px; opacity: 1; margin-top: 2rem; }
+        .demo-item.active .arrow-icon { transform: rotate(180deg); }
+
+        .input-minimal { background: transparent; border: none; border-bottom: 1px solid #333; color: white; padding: 1rem 0; width: 100%; }
+        .input-minimal:focus { outline: none; border-bottom: 1px solid white; }
+        .reveal-on-scroll { opacity: 0; transform: translateY(30px); transition: all 0.8s ease; }
+        .reveal-on-scroll.is-visible { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body class="antialiased selection:bg-white selection:text-black">
+
+    <div class="noise-overlay"></div>
+
+    <nav class="fixed top-0 w-full z-40 glass transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="#" class="text-2xl font-bold tracking-tight text-white flex items-center gap-2 relative z-50">
+                <div class="w-3 h-3 bg-white rounded-full"></div> SwiftDesign
+            </a>
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-luxury-muted">
+                <a href="#services" class="hover:text-white transition-colors">Služby</a>
+                <a href="#why-us" class="hover:text-white transition-colors">Proč my</a>
+                <a href="#demos" class="hover:text-white transition-colors">Ukázky</a>
+                <a href="#process" class="hover:text-white transition-colors">Proces</a>
+                <a href="#pricing" class="hover:text-white transition-colors">Ceník</a>
+            </div>
+            <button onclick="toggleInquiry()" class="group relative px-6 py-2 bg-white text-black font-semibold text-sm rounded-full overflow-hidden transition-all hover:scale-105">
+                <span class="relative z-10">Poptat web</span>
+                <div class="absolute inset-0 bg-gray-200 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
+            </button>
+        </div>
+    </nav>
+
+    <header id="hero-section" class="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden bg-luxury-black">
+        <div id="blob-container" class="absolute inset-0 w-full h-full overflow-hidden pointer-events-none"></div>
+
+        <div class="relative z-10 max-w-5xl mx-auto px-6 text-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-xs text-luxury-muted mb-8 reveal-on-scroll backdrop-blur-md">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                Přijímáme nové projekty Q1 2026
+            </div>
+            
+            <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-white mb-8 leading-[1.1] reveal-on-scroll">
+                Rychlost, design <br>
+                <span id="decrypt-text" class="text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-100 to-gray-500" data-value="& dokonalost.">& dokonalost.</span>
+            </h1>
+            
+            <p class="text-lg md:text-xl text-luxury-muted max-w-2xl mx-auto mb-10 leading-relaxed reveal-on-scroll" style="transition-delay: 100ms;">
+                SwiftDesign spojuje umění s technologií. Interaktivní zážitek, který vašim zákazníkům vezme dech.
+            </p>
+            
+            <div class="flex flex-col md:flex-row items-center justify-center gap-6 reveal-on-scroll" style="transition-delay: 200ms;">
+                <button onclick="toggleInquiry()" class="relative group px-8 py-4 bg-white text-black font-semibold rounded-full overflow-hidden w-full md:w-auto hover:scale-105 transition-transform duration-300">
+                    <span class="relative z-10">Zahájit spolupráci</span>
+                </button>
+                <a href="#demos" class="group px-8 py-4 border border-white/10 text-white font-medium rounded-full hover:bg-white/5 transition-all w-full md:w-auto backdrop-blur-sm flex items-center justify-center gap-2">
+                    Zobrazit ukázky <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-luxury-muted opacity-50 animate-bounce">
+            <span class="text-[10px] uppercase tracking-[0.2em]">Scroll</span>
+            <div class="w-[1px] h-8 bg-gradient-to-b from-transparent via-white to-transparent"></div>
+        </div>
+    </header>
+
+    <section id="services" class="py-24 md:py-32 bg-luxury-charcoal border-t border-white/5">
+        <div class="max-w-7xl mx-auto px-6">
+            <h2 class="text-3xl md:text-5xl font-bold text-white mb-20 reveal-on-scroll">Naše Expertíza</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/10 border border-white/10">
+                <div class="service-card bg-luxury-black p-10 reveal-on-scroll">
+                    <div class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-8 text-white"><i data-lucide="layout" class="w-6 h-6"></i></div>
+                    <h3 class="text-xl font-semibold text-white mb-3">Web Design & UX</h3>
+                    <p class="text-sm text-luxury-muted leading-relaxed">Design rozhraní, který upřednostňuje chování uživatele a konverze.</p>
+                </div>
+                <div class="service-card bg-luxury-black p-10 reveal-on-scroll" style="transition-delay: 100ms;">
+                    <div class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-8 text-white"><i data-lucide="code-2" class="w-6 h-6"></i></div>
+                    <h3 class="text-xl font-semibold text-white mb-3">Vývoj & Kód</h3>
+                    <p class="text-sm text-luxury-muted leading-relaxed">Čistý, sémantický kód postavený na moderních technologiích.</p>
+                </div>
+                <div class="service-card bg-luxury-black p-10 reveal-on-scroll" style="transition-delay: 200ms;">
+                    <div class="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-8 text-white"><i data-lucide="zap" class="w-6 h-6"></i></div>
+                    <h3 class="text-xl font-semibold text-white mb-3">Rychlost & SEO</h3>
+                    <p class="text-sm text-luxury-muted leading-relaxed">Bleskové načítání jsou u nás standardem, nikoliv příplatkem.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="why-us" class="py-24 bg-luxury-black border-t border-white/5">
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div class="reveal-on-scroll">
+                <h2 class="text-3xl md:text-5xl font-bold text-white mb-8 leading-tight">
+                    Nepoužíváme šablony.<br>
+                    <span class="text-luxury-muted">Tvoříme digitální zážitky.</span>
+                </h2>
+                <div class="space-y-8">
+                    <div class="flex gap-4">
+                        <div class="mt-1"><i data-lucide="check-circle" class="w-6 h-6 text-white"></i></div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-white">Strategie před pixely</h4>
+                            <p class="text-luxury-muted mt-2">Než napíšeme řádek kódu, musíme pochopit váš trh a cíle.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="mt-1"><i data-lucide="check-circle" class="w-6 h-6 text-white"></i></div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-white">Zaměření na konverze</h4>
+                            <p class="text-luxury-muted mt-2">Krása je k ničemu, pokud neprodává. Stavíme cesty, které mění návštěvníky v poptávky.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="relative bg-[#050505] border border-white/10 rounded-xl p-12 md:p-16 min-h-[500px] flex items-center justify-center font-mono text-lg leading-loose shadow-2xl reveal-on-scroll group hover:border-white/30 transition-colors duration-500 w-full">
+                <div class="opacity-80 group-hover:opacity-100 transition-opacity duration-300 scale-110">
+                    <span class="text-blue-400">&lt;SwiftDesign&gt;</span><br>
+                    <span class="text-white pl-4">createExperience({</span><br>
+                    <span class="text-green-400 pl-8">performance: "100%",</span><br>
+                    <span class="text-green-400 pl-8">design: "premium",</span><br>
+                    <span class="text-green-400 pl-8">conversion: "optimized"</span><br>
+                    <span class="text-white pl-4">});</span><br>
+                    <span class="text-blue-400">&lt;/SwiftDesign&gt;</span>
+                </div>
+                <div class="absolute inset-0 bg-blue-500/5 blur-xl -z-10 rounded-xl"></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="demos" class="py-24 bg-luxury-charcoal border-t border-white/5">
+        <div class="max-w-6xl mx-auto px-6">
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-12 reveal-on-scroll">Vybrané Ukázky</h2>
+            <div class="flex flex-col">
+                
+                <div class="demo-item group border-t border-white/10 cursor-pointer reveal-on-scroll" onclick="toggleDemo(this)">
+                    <div class="py-10 flex justify-between items-center px-4 hover:bg-white/5 transition-colors">
+                        <div><h3 class="text-2xl md:text-3xl text-white font-medium">UX/UI designer porfolio</h3><p class="text-sm text-luxury-muted mt-2">Portfolio / 3D</p></div>
+                        <i data-lucide="chevron-down" class="arrow-icon text-white w-6 h-6 transition-transform duration-300"></i>
+                    </div>
+                    <div class="demo-content">
+                        <div class="relative bg-neutral-900 rounded-xl overflow-hidden border border-white/10 aspect-video md:aspect-[21/9] group">
+                            <img src="portf.png" alt="Ventura Preview" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700">
+                            
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent flex flex-col items-center justify-center p-8 text-center">
+                                <h4 class="text-white text-2xl font-bold mb-2">UX/UI designer porfolio</h4>
+                                <p class="text-gray-300 mb-6 max-w-md">Moderní portfolio designéra postavené na interaktivitě a působivých 3D prvcích, které zaujmou na první pohled.</p>
+                                <a href="1/index.html" target="_blank" class="px-8 py-3 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors">Otevřít demo</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="demo-item group border-t border-white/10 cursor-pointer reveal-on-scroll" onclick="toggleDemo(this)">
+                    <div class="py-10 flex justify-between items-center px-4 hover:bg-white/5 transition-colors">
+                        <div><h3 class="text-2xl md:text-3xl text-white font-medium">Forma</h3><p class="text-sm text-luxury-muted mt-2">Architektura / Minimalistický</p></div>
+                        <i data-lucide="chevron-down" class="arrow-icon text-white w-6 h-6 transition-transform duration-300"></i>
+                    </div>
+                    <div class="demo-content">
+                        <div class="relative bg-neutral-900 rounded-xl overflow-hidden border border-white/10 aspect-video md:aspect-[21/9] group">
+                            <img src="basic.png" alt="Aerospace Preview" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700">
+                            
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent flex flex-col items-center justify-center p-8 text-center">
+                                <h4 class="text-white text-2xl font-bold mb-2">Forma</h4>
+                                <p class="text-gray-300 mb-6 max-w-md">Elegantní a čistý web navržený tak, aby nechal vyniknout architektonické projekty a firemní identitu.</p>
+                                <a href="2/index.html" target="_blank" class="px-8 py-3 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors">Otevřít demo</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="demo-item group border-t border-white/10 cursor-pointer reveal-on-scroll" onclick="toggleDemo(this)">
+                    <div class="py-10 flex justify-between items-center px-4 hover:bg-white/5 transition-colors">
+                        <div><h3 class="text-2xl md:text-3xl text-white font-medium">Sen Vàng</h3><p class="text-sm text-luxury-muted mt-2">Gastronomie / Rezervační systém</p></div>
+                        <i data-lucide="chevron-down" class="arrow-icon text-white w-6 h-6 transition-transform duration-300"></i>
+                    </div>
+                    <div class="demo-content">
+                        <div class="relative bg-neutral-900 rounded-xl overflow-hidden border border-white/10 aspect-video md:aspect-[21/9] group">
+                            <img src="restaurant.png" alt="Lumina Preview" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700">
+                            
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent flex flex-col items-center justify-center p-8 text-center">
+                                <h4 class="text-white text-2xl font-bold mb-2">Sen Vàng</h4>
+                                <p class="text-gray-300 mb-6 max-w-md">Autentická prezentace asijské kuchyně doplněná o funkční modul pro snadnou správu rezervací stolů.</p>
+                                <a href="3/index.html" target="_blank" class="px-8 py-3 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors">Otevřít demo</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="demo-item group border-t border-b border-white/10 cursor-pointer reveal-on-scroll" onclick="toggleDemo(this)">
+                    <div class="py-10 flex justify-between items-center px-4 hover:bg-white/5 transition-colors">
+                        <div><h3 class="text-2xl md:text-3xl text-white font-medium">Aetheria</h3><p class="text-sm text-luxury-muted mt-2">Hotel / Administrační panel</p></div>
+                        <i data-lucide="chevron-down" class="arrow-icon text-white w-6 h-6 transition-transform duration-300"></i>
+                    </div>
+                    <div class="demo-content">
+                        <div class="relative bg-neutral-900 rounded-xl overflow-hidden border border-white/10 aspect-video md:aspect-[21/9] group">
+                            <img src="admin.png" alt="Apex Preview" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700">
+                            
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent flex flex-col items-center justify-center p-8 text-center">
+                                <h4 class="text-white text-2xl font-bold mb-2">Aetheria</h4>
+                                <p class="text-gray-300 mb-6 max-w-md">Prémiové řešení pro luxusní hotel zahrnující komplexní rezervační systém a vlastní administrační panel pro správu.</p>
+                                <a href="4/index.html" target="_blank" class="px-8 py-3 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition-colors">Otevřít demo</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <section id="process" class="py-24 bg-luxury-black border-t border-white/5">
+        <div class="max-w-7xl mx-auto px-6">
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-16 text-center reveal-on-scroll">Náš Proces</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="relative p-6 border-l border-white/10 reveal-on-scroll group hover:border-white transition-colors">
+                    <span class="absolute -left-3 top-6 w-6 h-6 bg-luxury-black border border-white/20 text-xs flex items-center justify-center rounded-full text-white group-hover:bg-white group-hover:text-black transition-colors">1</span>
+                    <h4 class="text-white text-xl font-semibold mb-3">Analýza</h4>
+                    <p class="text-sm text-luxury-muted">Definujeme cíle, publikum a rozsah. Tvoříme plán úspěchu.</p>
+                </div>
+                <div class="relative p-6 border-l border-white/10 reveal-on-scroll group hover:border-white transition-colors" style="transition-delay: 100ms;">
+                    <span class="absolute -left-3 top-6 w-6 h-6 bg-luxury-black border border-white/20 text-xs flex items-center justify-center rounded-full text-white group-hover:bg-white group-hover:text-black transition-colors">2</span>
+                    <h4 class="text-white text-xl font-semibold mb-3">Design</h4>
+                    <p class="text-sm text-luxury-muted">Wireframy se mění ve věrné, interaktivní prototypy.</p>
+                </div>
+                <div class="relative p-6 border-l border-white/10 reveal-on-scroll group hover:border-white transition-colors" style="transition-delay: 200ms;">
+                    <span class="absolute -left-3 top-6 w-6 h-6 bg-luxury-black border border-white/20 text-xs flex items-center justify-center rounded-full text-white group-hover:bg-white group-hover:text-black transition-colors">3</span>
+                    <h4 class="text-white text-xl font-semibold mb-3">Vývoj</h4>
+                    <p class="text-sm text-luxury-muted">Pixel-perfect kódování s důrazem na testování.</p>
+                </div>
+                <div class="relative p-6 border-l border-white/10 reveal-on-scroll group hover:border-white transition-colors" style="transition-delay: 300ms;">
+                    <span class="absolute -left-3 top-6 w-6 h-6 bg-luxury-black border border-white/20 text-xs flex items-center justify-center rounded-full text-white group-hover:bg-white group-hover:text-black transition-colors">4</span>
+                    <h4 class="text-white text-xl font-semibold mb-3">Spuštění</h4>
+                    <p class="text-sm text-luxury-muted">Nasazení na server, zaškolení a následná podpora.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing" class="py-24 bg-luxury-charcoal border-t border-white/5">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 reveal-on-scroll">
+                <h2 class="text-3xl md:text-5xl font-bold text-white mb-6">Investice</h2>
+                <p class="text-luxury-muted">Vyberte si řešení pro váš růst.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+                
+                <div class="p-8 border border-white/10 rounded-2xl reveal-on-scroll hover:bg-white/5 transition-colors flex flex-col">
+                    <h3 class="text-white font-bold mb-2">Vizitka</h3>
+                    <p class="text-xs text-luxury-muted mb-6">Pro osobní portfolio.</p>
+                    <div class="text-3xl text-white font-bold mb-8">5 000 Kč</div>
+                    <ul class="space-y-4 mb-8 text-sm text-gray-400 flex-1">
+                        <li class="flex gap-3"><i data-lucide="check" class="w-4 h-4 text-white"></i> One-Page design</li>
+                        <li class="flex gap-3"><i data-lucide="check" class="w-4 h-4 text-white"></i> Responzivní (Mobil/PC)</li>
+                        <li class="flex gap-3"><i data-lucide="check" class="w-4 h-4 text-white"></i> Kontaktní formulář</li>
+                        <li class="flex gap-3"><i data-lucide="check" class="w-4 h-4 text-white"></i> Základní SEO</li>
+                    </ul>
+                    <button onclick="selectPackage('Vizitka')" class="w-full py-3 border border-white/20 text-white rounded-lg hover:bg-white hover:text-black transition-all">Zvolit</button>
+                </div>
+
+                <div class="p-8 border border-white/30 bg-white/5 rounded-2xl reveal-on-scroll relative md:-mt-4 hover:bg-white/10 transition-colors flex flex-col mt-8 md:mt-0">
+                    
+                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-white text-black text-xs font-bold px-4 py-1.5 rounded-full shadow-[0_0_15px_rgba(255,255,255,0.3)] z-20 border border-white">
+                        DOPORUČENO
+                    </div>
+                    
+                    <h3 class="text-white font-bold mb-2 pt-2">Business</h3>
+                    <p class="text-xs text-luxury-muted mb-6">Pro služby a firmy.</p>
+                    <div class="text-3xl text-white font-bold mb-8">8 000 Kč</div>
+                    
+                    <ul class="space-y-4 mb-8 text-sm text-white flex-1">
+                        <li class="flex gap-3"><i data-lucide="check-circle" class="w-4 h-4 text-white"></i> <strong>Vše z Vizitky</strong></li>
+                        <li class="flex gap-3"><i data-lucide="check-circle" class="w-4 h-4 text-white"></i> Rezervační systém</li>
+                        <li class="flex gap-3"><i data-lucide="check-circle" class="w-4 h-4 text-white"></i> Více podstránek</li>
+                        <li class="flex gap-3"><i data-lucide="check-circle" class="w-4 h-4 text-white"></i> Galerie / Portfolio</li>
+                        <li class="flex gap-3"><i data-lucide="check-circle" class="w-4 h-4 text-white"></i> Google Mapy</li>
+                    </ul>
+
+                    <button onclick="selectPackage('Business')" class="w-full py-3 bg-white text-black rounded-lg hover:bg-gray-200 transition-all font-bold">Zvolit</button>
+                </div>
+
+                <div class="p-8 border border-white/10 rounded-2xl reveal-on-scroll hover:bg-white/5 transition-colors flex flex-col">
+                    <h3 class="text-white font-bold mb-2">Admin</h3>
+                    <p class="text-xs text-luxury-muted mb-6">Plná kontrola.</p>
+                    <div class="text-3xl text-white font-bold mb-8">10 000 Kč</div>
+                    
+                    <ul class="space-y-4 mb-8 text-sm text-gray-400 flex-1">
+                        <li class="flex gap-3"><i data-lucide="check" class="w-4 h-4 text-white"></i> <strong>Vše z Business</strong></li>
+                        <li class="flex gap-3"><i data-lucide="check" class="w-4 h-4 text-white"></i> CMS (Admin panel)</li>
+                        <li class="flex gap-3"><i data-lucide="check" class="w-4 h-4 text-white"></i> Blog / Novinky</li>
+                        <li class="flex gap-3"><i data-lucide="check" class="w-4 h-4 text-white"></i> Editace textů</li>
+                        <li class="flex gap-3"><i data-lucide="check" class="w-4 h-4 text-white"></i> Analytika</li>
+                    </ul>
+
+                    <button onclick="selectPackage('Admin')" class="w-full py-3 border border-white/20 text-white rounded-lg hover:bg-white hover:text-black transition-all">Zvolit</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-12 border-t border-white/10 bg-luxury-black text-center text-sm text-luxury-muted">
+        &copy; 2026 SwiftDesign. Všechna práva vyhrazena.
+    </footer>
+
+    <div id="inquiry-overlay" onclick="toggleInquiry()" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-opacity duration-500"></div>
+    <div id="inquiry-drawer" class="fixed top-0 right-0 h-full w-full md:w-[600px] bg-[#0a0a0a] border-l border-white/10 z-[60] transform translate-x-full transition-transform duration-500 shadow-2xl flex flex-col">
+        <div class="p-8 border-b border-white/5 flex justify-between items-center">
+            <h2 class="text-2xl font-bold text-white">Poptávka</h2>
+            <button onclick="toggleInquiry()" class="text-luxury-muted hover:text-white transition-colors"><i data-lucide="x" class="w-8 h-8"></i></button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-8">
+            <form onsubmit="event.preventDefault(); alert('Odesláno!'); toggleInquiry();" class="space-y-8">
+                
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs uppercase text-luxury-muted mb-2">Jméno</label>
+                        <input type="text" class="input-minimal" placeholder="Jan Novák" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase text-luxury-muted mb-2">Firma</label>
+                        <input type="text" class="input-minimal" placeholder="Firma s.r.o." required>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase text-luxury-muted mb-2">Email</label>
+                    <input type="email" class="input-minimal" placeholder="email@firma.cz" required>
+                </div>
+                
+                <div>
+                    <label class="block text-xs uppercase text-luxury-muted mb-2">Vybraný balíček</label>
+                    <select id="package-select" class="input-minimal bg-[#0a0a0a] border-none text-white cursor-pointer focus:ring-0">
+                        <option value="Vizitka">Vizitka (5 000 Kč)</option>
+                        <option value="Business">Business (8 000 Kč)</option>
+                        <option value="Admin">Admin (10 000 Kč)</option>
+                        <option value="Custom">Nevím / Vlastní řešení</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs uppercase text-luxury-muted mb-2">Detailní popis</label>
+                    <textarea rows="6" class="input-minimal resize-none" placeholder="Popište vaši představu, cíle a požadavky..."></textarea>
+                </div>
+                
+                <button type="submit" class="w-full py-4 bg-white text-black font-bold uppercase hover:bg-gray-200 transition-colors">Odeslat</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        // --- UI Logic ---
+        const overlay = document.getElementById('inquiry-overlay');
+        const drawer = document.getElementById('inquiry-drawer');
+        const body = document.body;
+        const packageSelect = document.getElementById('package-select');
+
+        function toggleInquiry() {
+            drawer.classList.toggle('translate-x-full');
+            overlay.classList.toggle('opacity-0');
+            overlay.classList.toggle('pointer-events-none');
+            body.classList.toggle('overflow-hidden');
+        }
+        function selectPackage(val) { packageSelect.value = val; toggleInquiry(); }
+        function toggleDemo(el) { el.classList.toggle('active'); }
+
+        // Scroll Reveal
+        const observer = new IntersectionObserver((entries, obs) => {
+            entries.forEach(e => { if(e.isIntersecting) { e.target.classList.add('is-visible'); obs.unobserve(e.target); } });
+        });
+        document.querySelectorAll('.reveal-on-scroll').forEach(el => observer.observe(el));
+
+        // --- AMBIENT AUTO-AURORA ENGINE ---
+        const container = document.getElementById('blob-container');
+        const blobConfig = [
+            { color: 'bg-blue-600/30', size: 600, speed: 0.8 },
+            { color: 'bg-purple-600/20', size: 500, speed: 0.6 },
+            { color: 'bg-cyan-500/20', size: 400, speed: 1.0 },
+            { color: 'bg-indigo-600/20', size: 450, speed: 0.7 }
+        ];
+
+        const blobs = blobConfig.map((conf) => {
+            const div = document.createElement('div');
+            div.className = `blob ${conf.color} mix-blend-screen`;
+            div.style.width = `${conf.size}px`;
+            div.style.height = `${conf.size}px`;
+            container.appendChild(div);
+            return {
+                el: div,
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                vx: (Math.random() - 0.5) * conf.speed, 
+                vy: (Math.random() - 0.5) * conf.speed, 
+                radius: conf.size / 2,
+                maxSpeed: conf.speed
+            };
+        });
+
+        function animate() {
+            blobs.forEach(b => {
+                b.vx += (Math.random() - 0.5) * 0.02;
+                b.vy += (Math.random() - 0.5) * 0.02;
+                const currentSpeed = Math.sqrt(b.vx*b.vx + b.vy*b.vy);
+                if (currentSpeed > b.maxSpeed) { b.vx = (b.vx / currentSpeed) * b.maxSpeed; b.vy = (b.vy / currentSpeed) * b.maxSpeed; }
+                b.x += b.vx; b.y += b.vy;
+                const margin = -100;
+                if (b.x < margin) b.vx += 0.05; if (b.x > window.innerWidth - b.radius * 2 - margin) b.vx -= 0.05;
+                if (b.y < margin) b.vy += 0.05; if (b.y > window.innerHeight - b.radius * 2 - margin) b.vy -= 0.05;
+                b.el.style.transform = `translate3d(${b.x}px, ${b.y}px, 0)`;
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const h1 = document.getElementById("decrypt-text");
+        window.onload = () => {
+            let iter = 0; const orig = h1.dataset.value;
+            const interval = setInterval(() => {
+                h1.innerText = orig.split("").map((l, i) => i < iter ? orig[i] : letters[Math.floor(Math.random()*36)]).join("");
+                if(iter >= orig.length) clearInterval(interval); iter += 1/3;
+            }, 50);
+        }
+    </script>
+</body>
+</html>
